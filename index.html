@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EvoFirme — Simulateur de Gestion d'Entreprise</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    input[type="range"] {
+      accent-color: #2563eb;
+    }
+    .tab-active {
+      background-color: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- BARRE SUPÉRIEURE -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold text-xl shadow-sm">
+          EF
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg leading-tight text-slate-900">EvoFirme</h1>
+          <p id="header-subtitle" class="text-xs text-slate-500 font-medium">Business Game & Simulation</p>
+        </div>
+      </div>
+
+      <div id="header-stats" class="hidden items-center gap-2 sm:gap-4 flex-wrap">
+        <div class="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600">
+          Tour <span id="hdr-turn" class="text-slate-900 font-extrabold">1/12</span>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-700">
+          Joueur : <span id="hdr-company" class="font-extrabold">Firme 1</span>
+        </div>
+        <div class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700">
+          Trésorerie : <span id="hdr-cash" class="font-extrabold">200 000 €</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENEUR PRINCIPAL -->
+  <main class="flex-grow max-w-6xl w-full mx-auto p-4">
+
+    <!-- ==================== ÉCRAN 1 : CONFIGURATION ==================== -->
+    <section id="screen-setup" class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 my-4">
+      <div class="mb-6">
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 uppercase tracking-wider">Nouvelle Partie</span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">Configure ton marché</h2>
+        <p class="text-slate-500 text-sm mt-1">Démarre sur ton marché national, affronte la concurrence et développe ton groupe jusqu'à l'international.</p>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Mode de jeu -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Mode de jeu</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button onclick="setSetupMode('solo')" id="setup-mode-solo" class="p-4 rounded-xl border-2 border-blue-600 bg-blue-50/50 text-left transition">
+              <div class="font-bold text-slate-900 flex items-center justify-between">
+                <span>👤 Solo contre IA</span>
+                <span class="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">1 J + 3 IA</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Affronte 3 concurrents dirigés par l'ordinateur aux stratégies distinctes.</p>
+            </button>
+            <button onclick="setSetupMode('multi')" id="setup-mode-multi" class="p-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-left transition">
+              <div class="font-bold text-slate-900 flex items-center justify-between">
+                <span>👥 Multi Local (Pass & Play)</span>
+                <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">2 à 4 Joueurs</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Jouez chacun votre tour sur le même appareil comme dans une vraie session Win-Firme.</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Configuration Joueurs -->
+        <div id="multi-config-box" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Nombre de joueurs humains</label>
+          <div class="flex gap-2 mb-3">
+            <button onclick="setHumanCount(2)" id="btn-hc-2" class="px-4 py-2 rounded-lg font-bold text-sm bg-blue-600 text-white">2 Joueurs (+2 IA)</button>
+            <button onclick="setHumanCount(3)" id="btn-hc-3" class="px-4 py-2 rounded-lg font-bold text-sm bg-white border border-slate-300 text-slate-700">3 Joueurs (+1 IA)</button>
+            <button onclick="setHumanCount(4)" id="btn-hc-4" class="px-4 py-2 rounded-lg font-bold text-sm bg-white border border-slate-300 text-slate-700">4 Joueurs (0 IA)</button>
+          </div>
+        </div>
+
+        <!-- Noms des entreprises -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Nom de ton entreprise (ou des joueurs)</label>
+          <div id="company-names-inputs" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input type="text" id="comp-name-0" value="NovaTech" class="px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold text-sm focus:outline-none focus:border-blue-600" placeholder="Nom Entreprise 1" />
+          </div>
+        </div>
+
+        <!-- Choix du Produit -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">2. Secteur & Produit</label>
+          <div id="setup-products" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+        </div>
+
+        <!-- Choix du Pays de départ -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">3. Pays d'implantation initial (Usine & Marché local)</label>
+          <div id="setup-countries" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3"></div>
+        </div>
+
+        <!-- Nombre de tours -->
+        <div class="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div>
+            <div class="font-bold text-sm text-slate-800">Durée de la simulation</div>
+            <div class="text-xs text-slate-500">1 tour = 1 trimestre d'exercice comptable</div>
+          </div>
+          <select id="setup-turns" class="bg-white border border-slate-300 rounded-xl px-3 py-2 font-bold text-sm">
+            <option value="8">8 Tours (Rapide)</option>
+            <option value="12" selected>12 Tours (Standard Win-Firme)</option>
+            <option value="20">20 Tours (Long terme)</option>
+          </select>
+        </div>
+
+        <button onclick="launchGame()" class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-base shadow-lg shadow-blue-600/20 transition">
+          Lancer la simulation 🚀
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== ÉCRAN INTERMÉDIAIRE PASS & PLAY ==================== -->
+    <section id="screen-pass" class="hidden max-w-md mx-auto bg-white rounded-2xl shadow-lg border border-slate-200 p-8 text-center my-12">
+      <div class="w-16 h-16 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto text-3xl mb-4">🔒</div>
+      <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Mode Multi Local — Confidentialité</p>
+      <h2 class="text-2xl font-extrabold text-slate-900 mt-1">Au tour de <span id="pass-company-name" class="text-blue-600">Entreprise</span></h2>
+      <p class="text-sm text-slate-500 mt-2 mb-6">Passe l'appareil au dirigeant suivant pour qu'il prenne ses décisions stratégiques à l'abri des regards.</p>
+      <button onclick="confirmPassScreen()" class="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow">
+        Ouvrir mon tableau de bord
+      </button>
+    </section>
+
+    <!-- ==================== ÉCRAN 2 : TABLEAU DE BORD PRINCIPAL ==================== -->
+    <section id="screen-game" class="hidden space-y-5">
+
+      <!-- Bandeau Indicateurs Clés (KPIs) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Trésorerie</div>
+          <div id="kpi-cash" class="text-lg font-extrabold text-slate-900 mt-0.5">200 000 €</div>
+          <div id="kpi-cash-sub" class="text-[11px] text-slate-400">Prêt bancaire : 0 €</div>
+        </div>
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Chiffre d'Affaires (T-1)</div>
+          <div id="kpi-rev" class="text-lg font-extrabold text-blue-600 mt-0.5">0 €</div>
+          <div id="kpi-net" class="text-[11px] font-semibold text-slate-500">Résultat net : 0 €</div>
+        </div>
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Part de Marché (Locale)</div>
+          <div id="kpi-share" class="text-lg font-extrabold text-indigo-600 mt-0.5">25.0 %</div>
+          <div id="kpi-sold" class="text-[11px] text-slate-400">Ventes : 0 u.</div>
+        </div>
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Capacité Usine Max</div>
+          <div id="kpi-cap" class="text-lg font-extrabold text-slate-900 mt-0.5">200 u.</div>
+          <div id="kpi-machines" class="text-[11px] text-slate-400">2 machines • 4 ouvriers</div>
+        </div>
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Stock en Entrepôt</div>
+          <div id="kpi-stock" class="text-lg font-extrabold text-amber-600 mt-0.5">0 u.</div>
+          <div id="kpi-unitcost" class="text-[11px] text-slate-400">Coût mat. : 0 €/u</div>
+        </div>
+        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-xs text-slate-500 font-medium">Indice Qualité & Marque</div>
+          <div id="kpi-quality" class="text-lg font-extrabold text-emerald-600 mt-0.5">Niv. 100</div>
+          <div id="kpi-brand" class="text-[11px] text-slate-400">Notoriété : 50/100</div>
+        </div>
+      </div>
+
+      <!-- Alerte Événement Conjoncturel -->
+      <div id="event-banner" class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <span class="text-lg">📰</span>
+          <div>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-amber-800">Note de conjoncture :</span>
+            <span id="event-text" class="text-xs sm:text-sm font-medium text-amber-900 ml-1">Marché stable pour le lancement du trimestre.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation par Onglets -->
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        <button onclick="switchTab('decisions')" id="tab-btn-decisions" class="tab-active px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition">
+          🎛️ Décisions du Tour
+        </button>
+        <button onclick="switchTab('market')" id="tab-btn-market" class="bg-white text-slate-600 border border-slate-200 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition">
+          📊 Étude de Marché & Concurrence
+        </button>
+        <button onclick="switchTab('finance')" id="tab-btn-finance" class="bg-white text-slate-600 border border-slate-200 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition">
+          📑 Compte de Résultat & Banque
+        </button>
+        <button onclick="switchTab('world')" id="tab-btn-world" class="bg-white text-slate-600 border border-slate-200 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition flex items-center gap-1.5">
+          <span>🌍 International</span>
+          <span id="badge-world" class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">🔒</span>
+        </button>
+        <button onclick="switchTab('delegation')" id="tab-btn-delegation" class="bg-white text-slate-600 border border-slate-200 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition flex items-center gap-1.5">
+          <span>👔 Direction & Délégation</span>
+          <span id="badge-delegation" class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full">🔒</span>
+        </button>
+      </div>
+
+      <!-- CONTENU ONGLET 1 : DÉCISIONS -->
+      <div id="tab-decisions" class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <!-- Colonne 1 : Production & Usine -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="font-extrabold text-slate-900 flex items-center gap-2">🏭 Production & RH</h3>
+            <span id="auto-badge-indus" class="hidden text-[11px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Géré par Directeur</span>
+          </div>
+
+          <!-- Achat / Vente de machines -->
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="text-xs font-bold text-slate-800">Parc Machines (<span id="lbl-machines-count">2</span>)</div>
+                <div class="text-[11px] text-slate-500">1 machine = 100 u./tour (Coût : <span id="lbl-machine-cost">40 000</span> €)</div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button onclick="changeMachines(-1)" class="w-8 h-8 rounded-lg bg-white border border-slate-300 font-bold text-slate-700 hover:bg-slate-100">-</button>
+                <span id="dec-machines-delta" class="text-xs font-extrabold w-10 text-center text-blue-600">+0</span>
+                <button onclick="changeMachines(1)" class="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Embauche Ouvriers -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span>Effectif Ouvriers (2 ouvriers requis / machine)</span>
+              <span id="lbl-dec-workers" class="text-blue-600">4 ouvriers</span>
+            </div>
+            <input type="range" id="inp-workers" min="1" max="30" value="4" oninput="onDecisionChange()" class="w-full" />
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>1 ouvrier</span>
+              <span id="lbl-worker-cap">Capacité RH : 200 u.</span>
+              <span>30 ouvriers</span>
+            </div>
+          </div>
+
+          <!-- Salaire Ouvrier -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span>Salaire Trimestriel / Ouvrier</span>
+              <span id="lbl-dec-wage" class="text-blue-600">6 000 €</span>
+            </div>
+            <input type="range" id="inp-wage" min="4000" max="12000" step="250" value="6000" oninput="onDecisionChange()" class="w-full" />
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>Min. légal</span>
+              <span id="lbl-productivity" class="text-emerald-600 font-semibold">Productivité : 100%</span>
+              <span>Haut salaire</span>
+            </div>
+          </div>
+
+          <!-- Volume de production -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span>Volume de Production lancé</span>
+              <span id="lbl-dec-prod" class="text-blue-600">180 unités</span>
+            </div>
+            <input type="range" id="inp-prod" min="0" max="200" step="5" value="180" oninput="onDecisionChange()" class="w-full" />
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>0 u.</span>
+              <span id="lbl-max-prod">Max possible : 200 u.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colonne 2 : Commercial & R&D -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="font-extrabold text-slate-900 flex items-center gap-2">📣 Commercial & Innovation</h3>
+            <span id="auto-badge-comm" class="hidden text-[11px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Géré par Directeur</span>
+          </div>
+
+          <!-- Prix de vente (Marché local) -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span>Prix de vente unitaire (<span id="lbl-home-country">France</span>)</span>
+              <span id="lbl-dec-price" class="text-blue-600">1 200 €</span>
+            </div>
+            <input type="range" id="inp-price" min="400" max="2500" step="10" value="1200" oninput="onDecisionChange()" class="w-full" />
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span id="lbl-unit-cost-ref">Coût revient estimé : 620 €</span>
+              <span id="lbl-margin-ref" class="text-emerald-600 font-semibold">Marge : +580 €/u</span>
+            </div>
+          </div>
+
+          <!-- Budget Marketing -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span>Budget Marketing & Publicité</span>
+              <span id="lbl-dec-mkt" class="text-blue-600">15 000 €</span>
+            </div>
+            <input type="range" id="inp-mkt" min="0" max="120000" step="2500" value="15000" oninput="onDecisionChange()" class="w-full" />
+            <p class="text-[11px] text-slate-400 mt-0.5">Stimule la demande immédiate et bâtit la notoriété de marque.</p>
+          </div>
+
+          <!-- Budget R&D -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span>Investissement R&D (Qualité Produit)</span>
+              <span id="lbl-dec-rd" class="text-blue-600">12 000 €</span>
+            </div>
+            <input type="range" id="inp-rd" min="0" max="120000" step="2500" value="12000" oninput="onDecisionChange()" class="w-full" />
+            <p class="text-[11px] text-slate-400 mt-0.5">Effet cumulatif durable : permet de vendre plus cher sans perdre de clients.</p>
+          </div>
+
+          <!-- Tarifs Export (si marchés internationaux ouverts) -->
+          <div id="export-pricing-box" class="hidden pt-2 border-t border-slate-100 space-y-2">
+            <div class="text-xs font-bold text-slate-700">🌍 Prix de vente Export (Marchés ouverts)</div>
+            <div id="export-sliders-list" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <!-- Colonne 3 : Synthèse Prévisionnelle & Validation -->
+        <div class="bg-slate-900 text-white p-5 rounded-2xl shadow-sm flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <h3 class="font-extrabold text-base text-blue-400 border-b border-slate-800 pb-2.5">
+              📐 Devis Prévisionnel du Tour
+            </h3>
+
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between text-slate-300">
+                <span>Disponibilité (Stock + Prod.) :</span>
+                <span id="prev-avail" class="font-bold text-white">180 unités</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>Achat Matières Premières :</span>
+                <span id="prev-mat" class="font-semibold text-rose-400">-0 €</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>Masse Salariale (Ouvriers + Dir.) :</span>
+                <span id="prev-wages" class="font-semibold text-rose-400">-0 €</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>Investissement Machines :</span>
+                <span id="prev-capex" class="font-semibold text-rose-400">0 €</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>Budgets Marketing + R&D :</span>
+                <span id="prev-mktrd" class="font-semibold text-rose-400">-0 €</span>
+              </div>
+              <div class="flex justify-between text-slate-300">
+                <span>Logistique Export & Stockage :</span>
+                <span id="prev-log" class="font-semibold text-rose-400">-0 €</span>
+              </div>
+              <div class="border-t border-slate-800 pt-2 flex justify-between text-sm font-bold">
+                <span>Total Sorties Engagées :</span>
+                <span id="prev-total-out" class="text-rose-400">-0 €</span>
+              </div>
+              <div class="flex justify-between text-xs text-slate-400">
+                <span>CA Si 100% vendu :</span>
+                <span id="prev-max-rev" class="text-emerald-400 font-bold">+0 €</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-3 border-t border-slate-800">
+            <div id="turn-warning" class="hidden text-[11px] bg-rose-950/80 border border-rose-700 text-rose-200 p-2.5 rounded-lg">
+              ⚠️ Attention : vos dépenses dépassent votre trésorerie. Un découvert bancaire (taux 8%) sera appliqué si les ventes ne compensent pas.
+            </div>
+            <button onclick="submitPlayerDecisions()" class="w-full py-3.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 font-extrabold text-sm shadow-lg transition">
+              Valider mes décisions du tour ➡️
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CONTENU ONGLET 2 : ÉTUDE DE MARCHÉ & CONCURRENCE -->
+      <div id="tab-market" class="hidden space-y-5">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="font-extrabold text-slate-900 mb-1">📊 Benchmark Concurrentiel (Dernier Tour)</h3>
+          <p class="text-xs text-slate-500 mb-4">Compare les prix, la qualité, les parts de marché et la santé financière de toutes les entreprises en lice.</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                  <th class="py-2.5 px-3">Entreprise</th>
+                  <th class="py-2.5 px-3">Prix Local</th>
+                  <th class="py-2.5 px-3">Qualité (R&D)</th>
+                  <th class="py-2.5 px-3">Notoriété</th>
+                  <th class="py-2.5 px-3">Ventes Totales</th>
+                  <th class="py-2.5 px-3">Part de Marché</th>
+                  <th class="py-2.5 px-3">CA du Tour</th>
+                  <th class="py-2.5 px-3">Résultat Net</th>
+                  <th class="py-2.5 px-3">Trésorerie</th>
+                </tr>
+              </thead>
+              <tbody id="market-table-body" class="divide-y divide-slate-100 font-medium"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="font-extrabold text-slate-900 mb-2">📜 Journal des Rapports de Marché</h3>
+          <div id="market-logs" class="space-y-2 text-xs text-slate-600 max-h-64 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- CONTENU ONGLET 3 : COMPTE DE RÉSULTAT & BANQUE -->
+      <div id="tab-finance" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Compte de résultat -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="font-extrabold text-slate-900 mb-1">📑 Compte de Résultat (Dernier Exercice)</h3>
+          <p class="text-xs text-slate-500 mb-4">Détail comptable des produits et charges du tour écoulé.</p>
+          <div id="income-statement-box" class="space-y-2 text-xs sm:text-sm"></div>
+        </div>
+
+        <!-- Gestion Bancaire -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="font-extrabold text-slate-900 mb-1">🏦 Banque & Financement</h3>
+          <p class="text-xs text-slate-500">Emprunte pour financer de nouvelles machines ou ton expansion internationale (Taux : 3% / trimestre, contre 8% en cas de découvert non autorisé).</p>
+          
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Dette bancaire actuelle :</span>
+              <span id="fin-debt" class="font-extrabold text-slate-900">0 €</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Capacité d'emprunt restante :</span>
+              <span id="fin-borrow-cap" class="font-bold text-emerald-600">250 000 €</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Intérêts trimestriels (3%) :</span>
+              <span id="fin-interest" class="font-bold text-rose-600">0 € / tour</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button onclick="takeLoan(50000)" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs">
+              + Emprunter 50 000 €
+            </button>
+            <button onclick="repayLoan(50000)" class="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs">
+              - Rembourser 50 000 €
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENU ONGLET 4 : EXPANSION INTERNATIONALE -->
+      <div id="tab-world" class="hidden space-y-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 class="font-extrabold text-slate-900 text-lg">🌍 Expansion Internationale & Export</h3>
+              <p class="text-xs text-slate-500">Condition d'ouverture : posséder au moins <strong>3 machines</strong> (300 u. de capacité) ou avoir généré <strong>220 000 € de CA</strong> sur un tour.</p>
+            </div>
+            <span id="world-status-pill" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+              Développement local requis
+            </span>
+          </div>
+
+          <div id="world-countries-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+      </div>
+
+      <!-- CONTENU ONGLET 5 : DÉLÉGATION & COMITÉ DE DIRECTION -->
+      <div id="tab-delegation" class="hidden space-y-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 class="font-extrabold text-slate-900 text-lg">👔 Comité de Direction & Délégation</h3>
+              <p class="text-xs text-slate-500">Débloqué lorsque ton entreprise atteint une taille critique (Trésorerie ≥ 250 000 € ou CA trimestriel ≥ 200 000 €). Les directeurs optimisent automatiquement tes curseurs à chaque tour.</p>
+            </div>
+            <span id="delegation-status-pill" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+              Verrouillé (Taille PME)
+            </span>
+          </div>
+
+          <div id="managers-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== ÉCRAN 3 : FIN DE PARTIE ==================== -->
+    <section id="screen-gameover" class="hidden max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border border-slate-200 p-8 my-6 text-center space-y-6">
+      <div class="text-4xl">🏆</div>
+      <div>
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 uppercase">Bilan de l'assemblée générale</span>
+        <h2 class="text-3xl font-extrabold text-slate-900 mt-2">Fin de la Simulation</h2>
+        <p id="gameover-subtitle" class="text-slate-500 text-sm mt-1">Classement final basé sur la Valeur Nette de l'entreprise (Trésorerie + Valeur des Machines + Stocks - Dettes).</p>
+      </div>
+
+      <div id="gameover-podium" class="space-y-3 text-left"></div>
+
+      <button onclick="location.reload()" class="px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold shadow">
+        Relancer une nouvelle partie 🔄
+      </button>
+    </section>
+
+  </main>
+
+  <script>
+    // ==================== DONNÉES DE RÉFÉRENCE ====================
+    const PRODUCTS = [
+      {
+        id: 'ebike',
+        name: 'Vélo Électrique',
+        icon: '🚲',
+        matCost: 380,
+        refPrice: 1200,
+        minPrice: 650,
+        maxPrice: 2400,
+        machineCost: 45000,
+        storageCost: 25,
+        desc: 'Forte valeur ajoutée, sensible à la R&D et aux économies d’échelle.'
+      },
+      {
+        id: 'drone',
+        name: 'Drone Caméra 4K',
+        icon: '🛸',
+        matCost: 210,
+        refPrice: 750,
+        minPrice: 380,
+        maxPrice: 1500,
+        machineCost: 35000,
+        storageCost: 15,
+        desc: 'Marché dynamique à forte élasticité prix et compétition marketing.'
+      },
+      {
+        id: 'watch',
+        name: 'Montre Mécanique',
+        icon: '⌚',
+        matCost: 290,
+        refPrice: 1050,
+        minPrice: 550,
+        maxPrice: 2200,
+        machineCost: 40000,
+        storageCost: 12,
+        desc: 'Clientèle exigeante sur la qualité (R&D) et l’image de marque.'
+      }
+    ];
+
+    const COUNTRIES = [
+      {
+        id: 'FR',
+        name: 'France',
+        flag: '🇫🇷',
+        demandFactor: 1.0,
+        baseWage: 6000,
+        priceSensitivity: 1.0,
+        qualitySensitivity: 1.1,
+        entryCost: 35000,
+        transportCost: 30
+      },
+      {
+        id: 'DE',
+        name: 'Allemagne',
+        flag: '🇩🇪',
+        demandFactor: 1.25,
+        baseWage: 6750,
+        priceSensitivity: 0.95,
+        qualitySensitivity: 1.25,
+        entryCost: 45000,
+        transportCost: 35
+      },
+      {
+        id: 'US',
+        name: 'États-Unis',
+        flag: '🇺🇸',
+        demandFactor: 1.6,
+        baseWage: 7250,
+        priceSensitivity: 0.9,
+        qualitySensitivity: 1.15,
+        entryCost: 65000,
+        transportCost: 70
+      },
+      {
+        id: 'MX',
+        name: 'Mexique',
+        flag: '🇲🇽',
+        demandFactor: 0.95,
+        baseWage: 4500,
+        priceSensitivity: 1.35,
+        qualitySensitivity: 0.85,
+        entryCost: 30000,
+        transportCost: 65
+      },
+      {
+        id: 'JP',
+        name: 'Japon',
+        flag: '🇯🇵',
+        demandFactor: 1.15,
+        baseWage: 6500,
+        priceSensitivity: 0.85,
+        qualitySensitivity: 1.4,
+        entryCost: 55000,
+        transportCost: 80
+      }
+    ];
+
+    const MANAGERS = [
+      {
+        id: 'indus',
+        title: 'Directeur Industriel & RH',
+        icon: '⚙️',
+        salary: 12000,
+        desc: 'Calibre automatiquement le nombre d’ouvriers exact pour faire tourner tes machines à 100% et fixe le salaire optimal.'
+      },
+      {
+        id: 'comm',
+        title: 'Directeur Commercial',
+        icon: '📈',
+        salary: 14000,
+        desc: 'Ajuste automatiquement tes prix de vente (local et export) et ton budget marketing selon la concurrence.'
+      },
+      {
+        id: 'rd',
+        title: 'Directeur Innovation (CTO)',
+        icon: '🔬',
+        salary: 12000,
+        desc: 'Pilote l’investissement R&D optimal à chaque tour pour maintenir ton avance technologique sans plomber la trésorerie.'
+      }
+    ];
+
+    // ==================== ÉTAT GLOBAL DU JEU ====================
+    let setupState = {
+      mode: 'solo',
+      humanCount: 1,
+      productId: 'ebike',
+      homeCountryId: 'FR',
+      maxTurns: 12
+    };
+
+    let game = {
+      turn: 1,
+      maxTurns: 12,
+      product: null,
+      homeCountry: null,
+      activePlayerIdx: 0,
+      companies: [],
+      macroEvent: { title: 'Conjoncture stable : demande nominale sur les marchés.', demandMod: 1.0, matCostMod: 1.0 },
+      logs: []
+    };
+
+    // ==================== INITIALISATION SETUP ====================
+    function initSetupUI() {
+      renderSetupProducts();
+      renderSetupCountries();
+      renderCompanyInputs();
+    }
+
+    function setSetupMode(mode) {
+      setupState.mode = mode;
+      const btnSolo = document.getElementById('setup-mode-solo');
+      const btnMulti = document.getElementById('setup-mode-multi');
+      const multiBox = document.getElementById('multi-config-box');
+
+      if (mode === 'solo') {
+        setupState.humanCount = 1;
+        btnSolo.className = 'p-4 rounded-xl border-2 border-blue-600 bg-blue-50/50 text-left transition';
+        btnMulti.className = 'p-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-left transition';
+        multiBox.classList.add('hidden');
+      } else {
+        setupState.humanCount = 2;
+        btnMulti.className = 'p-4 rounded-xl border-2 border-blue-600 bg-blue-50/50 text-left transition';
+        btnSolo.className = 'p-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-left transition';
+        multiBox.classList.remove('hidden');
+        setHumanCount(2);
+      }
+      renderCompanyInputs();
+    }
+
+    function setHumanCount(n) {
+      setupState.humanCount = n;
+      [2, 3, 4].forEach(val => {
+        const b = document.getElementById(`btn-hc-${val}`);
+        if (val === n) {
+          b.className = 'px-4 py-2 rounded-lg font-bold text-sm bg-blue-600 text-white';
+        } else {
+          b.className = 'px-4 py-2 rounded-lg font-bold text-sm bg-white border border-slate-300 text-slate-700';
+        }
+      });
+      renderCompanyInputs();
+    }
+
+    function renderCompanyInputs() {
+      const container = document.getElementById('company-names-inputs');
+      const defaults = ['NovaTech', 'AéroDynamics', 'HexaGroupe', 'Veloce Corp'];
+      let html = '';
+      for (let i = 0; i < setupState.humanCount; i++) {
+        html += `
+          <input type="text" id="comp-name-${i}" value="${defaults[i]}" 
+            class="px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold text-sm focus:outline-none focus:border-blue-600" 
+            placeholder="Nom Entreprise Joueur ${i + 1}" />
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    function renderSetupProducts() {
+      const container = document.getElementById('setup-products');
+      container.innerHTML = PRODUCTS.map(p => {
+        const active = p.id === setupState.productId;
+        return `
+          <button onclick="selectSetupProduct('${p.id}')" class="p-4 rounded-xl border-2 text-left transition ${active ? 'border-blue-600 bg-blue-50/50' : 'border-slate-200 hover:border-slate-300'}">
+            <div class="text-2xl mb-1">${p.icon}</div>
+            <div class="font-extrabold text-slate-900 text-sm">${p.name}</div>
+            <div class="text-[11px] text-blue-600 font-bold mt-0.5">Prix réf. ~${p.refPrice} € • Coût mat. ${p.matCost} €</div>
+            <p class="text-[11px] text-slate-500 mt-1 leading-snug">${p.desc}</p>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectSetupProduct(id) {
+      setupState.productId = id;
+      renderSetupProducts();
+    }
+
+    function renderSetupCountries() {
+      const container = document.getElementById('setup-countries');
+      container.innerHTML = COUNTRIES.slice(0, 4).map(c => {
+        const active = c.id === setupState.homeCountryId;
+        return `
+          <button onclick="selectSetupCountry('${c.id}')" class="p-3.5 rounded-xl border-2 text-left transition ${active ? 'border-blue-600 bg-blue-50/50' : 'border-slate-200 hover:border-slate-300'}">
+            <div class="font-extrabold text-sm text-slate-900">${c.flag} ${c.name}</div>
+            <div class="text-[11px] text-slate-500 mt-1">Taille marché : x${c.demandFactor}</div>
+            <div class="text-[11px] text-slate-500">Salaire réf. : ${c.baseWage} €</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectSetupCountry(id) {
+      setupState.homeCountryId = id;
+      renderSetupCountries();
+    }
+
+    // ==================== CRÉATION DE LA PARTIE ====================
+    function launchGame() {
+      game.product = PRODUCTS.find(p => p.id === setupState.productId);
+      game.homeCountry = COUNTRIES.find(c => c.id === setupState.homeCountryId);
+      game.maxTurns = parseInt(document.getElementById('setup-turns').value, 10);
+      game.turn = 1;
+      game.companies = [];
+
+      const aiTemplates = [
+        { name: 'AlphaCorp (IA Low-Cost)', strategy: 'lowcost' },
+        { name: 'ZenithLab (IA Premium)', strategy: 'premium' },
+        { name: 'Optima (IA Équilibrée)', strategy: 'balanced' }
+      ];
+
+      const totalFirms = 4;
+      for (let i = 0; i < totalFirms; i++) {
+        const isHuman = i < setupState.humanCount;
+        const inputEl = document.getElementById(`comp-name-${i}`);
+        const name = isHuman
+          ? (inputEl && inputEl.value.trim() ? inputEl.value.trim() : `Joueur ${i + 1}`)
+          : aiTemplates[i - setupState.humanCount].name;
+
+        const aiStrat = isHuman ? null : aiTemplates[i - setupState.humanCount].strategy;
+
+        game.companies.push(createCompany(i, name, isHuman, aiStrat));
+      }
+
+      game.logs = [
+        `<strong>Tour 1</strong> : Création des 4 entreprises sur le marché <strong>${game.homeCountry.flag} ${game.homeCountry.name}</strong> dans le secteur <strong>${game.product.name}</strong>.`
+      ];
+
+      document.getElementById('screen-setup').classList.add('hidden');
+      document.getElementById('header-stats').classList.remove('hidden');
+      document.getElementById('header-stats').classList.add('flex');
+
+      game.activePlayerIdx = 0;
+      loadActivePlayerTurn();
+    }
+
+    function createCompany(id, name, isHuman, aiStrategy) {
+      const p = game.product;
+      const c = game.homeCountry;
+      const exportPrices = {};
+      COUNTRIES.forEach(cnt => { exportPrices[cnt.id] = p.refPrice; });
+
+      return {
+        id,
+        name,
+        isHuman,
+        aiStrategy,
+        cash: 200000,
+        loan: 0,
+        machines: 2,
+        workers: 4,
+        wage: c.baseWage,
+        stock: 0,
+        quality: 100,
+        brand: 50,
+        cumulativeRD: 0,
+        unlockedMarkets: [c.id],
+        unlockedWorldCapability: false,
+        unlockedDelegationCapability: false,
+        managers: { indus: false, comm: false, rd: false },
+        decisions: {
+          machineDelta: 0,
+          workers: 4,
+          wage: c.baseWage,
+          prod: 180,
+          price: p.refPrice,
+          exportPrices: exportPrices,
+          mkt: 15000,
+          rd: 12000
+        },
+        lastReport: {
+          revenue: 0,
+          matCostTotal: 0,
+          wagesTotal: 0,
+          mktTotal: 0,
+          rdTotal: 0,
+          storageAndExport: 0,
+          depreciation: 0,
+          interest: 0,
+          netIncome: 0,
+          unitsSoldHome: 0,
+          unitsSoldExport: 0,
+          marketShareHome: 25.0
+        }
+      };
+    }
+
+    // ==================== GESTION DU TOUR DES JOUEURS ====================
+    function loadActivePlayerTurn() {
+      const comp = game.companies[game.activePlayerIdx];
+
+      // Appliquer les directeurs automatiques s'ils sont actifs
+      applyAutomatedManagers(comp);
+
+      // Configurer les bornes des curseurs selon le produit
+      const inpPrice = document.getElementById('inp-price');
+      inpPrice.min = game.product.minPrice;
+      inpPrice.max = game.product.maxPrice;
+      inpPrice.value = comp.decisions.price;
+
+      const inpWage = document.getElementById('inp-wage');
+      inpWage.min = Math.round(game.homeCountry.baseWage * 0.75);
+      inpWage.max = Math.round(game.homeCountry.baseWage * 1.8);
+      inpWage.value = comp.decisions.wage;
+
+      document.getElementById('inp-workers').value = comp.decisions.workers;
+      document.getElementById('inp-prod').value = comp.decisions.prod;
+      document.getElementById('inp-mkt').value = comp.decisions.mkt;
+      document.getElementById('inp-rd').value = comp.decisions.rd;
+
+      document.getElementById('screen-pass').classList.add('hidden');
+      document.getElementById('screen-game').classList.remove('hidden');
+
+      switchTab('decisions');
+      refreshAllDashboardUI();
+    }
+
+    function confirmPassScreen() {
+      loadActivePlayerTurn();
+    }
+
+    // ==================== AUTOMATISATION (DÉLÉGATION) ====================
+    function applyAutomatedManagers(comp) {
+      const totalMachines = Math.max(1, comp.machines + comp.decisions.machineDelta);
+      if (comp.managers.indus) {
+        comp.decisions.workers = totalMachines * 2;
+        comp.decisions.wage = Math.round(game.homeCountry.baseWage * 1.08);
+        const maxCap = totalMachines * 100;
+        comp.decisions.prod = Math.max(0, maxCap - Math.min(comp.stock, 40));
+      }
+      if (comp.managers.comm) {
+        const qualBonus = (comp.quality - 100) * 3.5;
+        const optPrice = Math.min(game.product.maxPrice, Math.round((game.product.refPrice + qualBonus) / 10) * 10);
+        comp.decisions.price = optPrice;
+        COUNTRIES.forEach(cnt => {
+          comp.decisions.exportPrices[cnt.id] = Math.round((optPrice + cnt.transportCost) / 10) * 10;
+        });
+        comp.decisions.mkt = Math.min(80000, Math.max(15000, Math.round(comp.cash * 0.12 / 2500) * 2500));
+      }
+      if (comp.managers.rd) {
+        comp.decisions.rd = Math.min(75000, Math.max(15000, Math.round(comp.cash * 0.10 / 2500) * 2500));
+      }
+    }
+
+    // ==================== MISE À JOUR DE L'INTERFACE ====================
+    function refreshAllDashboardUI() {
+      const comp = game.companies[game.activePlayerIdx];
+
+      // Vérifier déblocage International & Délégation
+      if (comp.machines >= 3 || comp.lastReport.revenue >= 220000 || comp.cash >= 260000) {
+        comp.unlockedWorldCapability = true;
+      }
+      if (comp.cash >= 250000 || comp.lastReport.revenue >= 200000) {
+        comp.unlockedDelegationCapability = true;
+      }
+
+      // Header
+      document.getElementById('hdr-turn').innerText = `${game.turn}/${game.maxTurns}`;
+      document.getElementById('hdr-company').innerText = comp.name;
+      document.getElementById('hdr-cash').innerText = formatEuro(comp.cash);
+
+      // KPIs
+      const kpiCash = document.getElementById('kpi-cash');
+      kpiCash.innerText = formatEuro(comp.cash);
+      kpiCash.className = `text-lg font-extrabold mt-0.5 ${comp.cash < 0 ? 'text-rose-600' : 'text-slate-900'}`;
+      document.getElementById('kpi-cash-sub').innerText = `Dette bancaire : ${formatEuro(comp.loan)}`;
+
+      document.getElementById('kpi-rev').innerText = formatEuro(comp.lastReport.revenue);
+      const net = comp.lastReport.netIncome;
+      const kpiNet = document.getElementById('kpi-net');
+      kpiNet.innerText = `Résultat net : ${net >= 0 ? '+' : ''}${formatEuro(net)}`;
+      kpiNet.className = `text-[11px] font-semibold ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+
+      document.getElementById('kpi-share').innerText = `${comp.lastReport.marketShareHome.toFixed(1)} %`;
+      document.getElementById('kpi-sold').innerText = `Ventes T-1 : ${comp.lastReport.unitsSoldHome + comp.lastReport.unitsSoldExport} u.`;
+
+      const maxCap = getMaxProductionCapacity(comp);
+      document.getElementById('kpi-cap').innerText = `${maxCap} u.`;
+      document.getElementById('kpi-machines').innerText = `${comp.machines} mach. • ${comp.workers} ouvr.`;
+
+      document.getElementById('kpi-stock').innerText = `${comp.stock} u.`;
+      const currentMatCost = Math.round(game.product.matCost * game.macroEvent.matCostMod);
+      document.getElementById('kpi-unitcost').innerText = `Coût mat. : ${currentMatCost} €/u`;
+
+      document.getElementById('kpi-quality').innerText = `Niv. ${Math.round(comp.quality)}`;
+      document.getElementById('kpi-brand').innerText = `Notoriété : ${Math.round(comp.brand)}/100`;
+
+      // Bannière événement
+      document.getElementById('event-text').innerText = game.macroEvent.title;
+
+      // Badges onglets
+      document.getElementById('badge-world').innerText = comp.unlockedWorldCapability ? `${comp.unlockedMarkets.length} pays` : '🔒';
+      document.getElementById('badge-delegation').innerText = comp.unlockedDelegationCapability ? 'Ouvert' : '🔒';
+
+      // Badges auto
+      document.getElementById('auto-badge-indus').classList.toggle('hidden', !comp.managers.indus);
+      document.getElementById('auto-badge-comm').classList.toggle('hidden', !(comp.managers.comm || comp.managers.rd));
+
+      renderExportSliders(comp);
+      onDecisionChange();
+      renderMarketTab();
+      renderFinanceTab(comp);
+      renderWorldTab(comp);
+      renderDelegationTab(comp);
+    }
+
+    function getMaxProductionCapacity(comp) {
+      const effectiveMachines = Math.max(1, comp.machines + comp.decisions.machineDelta);
+      const machineCap = effectiveMachines * 100;
+      const wageRatio = comp.decisions.wage / game.homeCountry.baseWage;
+      const productivity = Math.min(1.25, Math.max(0.7, 0.55 + 0.45 * wageRatio));
+      const workerCap = Math.round(comp.decisions.workers * 50 * productivity);
+      return Math.min(machineCap, workerCap);
+    }
+
+    function changeMachines(delta) {
+      const comp = game.companies[game.activePlayerIdx];
+      const nextDelta = comp.decisions.machineDelta + delta;
+      if (comp.machines + nextDelta < 1) return;
+      if (nextDelta > 3) return;
+      comp.decisions.machineDelta = nextDelta;
+      onDecisionChange();
+    }
+
+    function onDecisionChange() {
+      const comp = game.companies[game.activePlayerIdx];
+
+      comp.decisions.workers = parseInt(document.getElementById('inp-workers').value, 10);
+      comp.decisions.wage = parseInt(document.getElementById('inp-wage').value, 10);
+      comp.decisions.price = parseInt(document.getElementById('inp-price').value, 10);
+      comp.decisions.mkt = parseInt(document.getElementById('inp-mkt').value, 10);
+      comp.decisions.rd = parseInt(document.getElementById('inp-rd').value, 10);
+
+      const effectiveMachines = Math.max(1, comp.machines + comp.decisions.machineDelta);
+      const wageRatio = comp.decisions.wage / game.homeCountry.baseWage;
+      const productivity = Math.min(1.25, Math.max(0.7, 0.55 + 0.45 * wageRatio));
+      const workerCap = Math.round(comp.decisions.workers * 50 * productivity);
+      const maxProd = Math.min(effectiveMachines * 100, workerCap);
+
+      const inpProd = document.getElementById('inp-prod');
+      inpProd.max = maxProd;
+      if (parseInt(inpProd.value, 10) > maxProd) {
+        inpProd.value = maxProd;
+      }
+      comp.decisions.prod = parseInt(inpProd.value, 10);
+
+      // Mise à jour des labels
+      document.getElementById('lbl-machines-count').innerText = effectiveMachines;
+      document.getElementById('lbl-machine-cost').innerText = game.product.machineCost.toLocaleString('fr-FR');
+      const dMach = comp.decisions.machineDelta;
+      document.getElementById('dec-machines-delta').innerText = dMach >= 0 ? `+${dMach}` : `${dMach}`;
+
+      document.getElementById('lbl-dec-workers').innerText = `${comp.decisions.workers} ouvrier${comp.decisions.workers > 1 ? 's' : ''}`;
+      document.getElementById('lbl-worker-cap').innerText = `Capacité RH : ${workerCap} u.`;
+
+      document.getElementById('lbl-dec-wage').innerText = formatEuro(comp.decisions.wage);
+      document.getElementById('lbl-productivity').innerText = `Productivité : ${Math.round(productivity * 100)}%`;
+
+      document.getElementById('lbl-dec-prod').innerText = `${comp.decisions.prod} unités`;
+      document.getElementById('lbl-max-prod').innerText = `Max possible : ${maxProd} u.`;
+
+      document.getElementById('lbl-home-country').innerText = game.homeCountry.name;
+      document.getElementById('lbl-dec-price').innerText = formatEuro(comp.decisions.price);
+
+      const unitMat = Math.round(game.product.matCost * game.macroEvent.matCostMod);
+      const unitLabor = comp.decisions.prod > 0 ? Math.round((comp.decisions.workers * comp.decisions.wage) / comp.decisions.prod) : 0;
+      const estUnitCost = unitMat + unitLabor;
+      const estMargin = comp.decisions.price - estUnitCost;
+
+      document.getElementById('lbl-unit-cost-ref').innerText = `Coût revient est. : ${estUnitCost} €/u`;
+      const marginEl = document.getElementById('lbl-margin-ref');
+      marginEl.innerText = `Marge brute : ${estMargin >= 0 ? '+' : ''}${estMargin} €/u`;
+      marginEl.className = `font-semibold ${estMargin >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+
+      document.getElementById('lbl-dec-mkt').innerText = formatEuro(comp.decisions.mkt);
+      document.getElementById('lbl-dec-rd').innerText = formatEuro(comp.decisions.rd);
+
+      // Calcul du devis prévisionnel
+      const matTotal = comp.decisions.prod * unitMat;
+      const managerWages = getManagerCost(comp);
+      const wagesTotal = (comp.decisions.workers * comp.decisions.wage) + managerWages;
+      const capex = comp.decisions.machineDelta > 0
+        ? comp.decisions.machineDelta * game.product.machineCost
+        : comp.decisions.machineDelta * Math.round(game.product.machineCost * 0.5);
+      const mktRdTotal = comp.decisions.mkt + comp.decisions.rd;
+      const exportFixed = (comp.unlockedMarkets.length - 1) * 8000;
+
+      const totalOut = matTotal + wagesTotal + capex + mktRdTotal + exportFixed;
+      const totalAvail = comp.stock + comp.decisions.prod;
+      const maxPotentialRev = totalAvail * comp.decisions.price;
+
+      document.getElementById('prev-avail').innerText = `${totalAvail} unités`;
+      document.getElementById('prev-mat').innerText = `-${formatEuro(matTotal)}`;
+      document.getElementById('prev-wages').innerText = `-${formatEuro(wagesTotal)}`;
+      document.getElementById('prev-capex').innerText = `${capex >= 0 ? '-' : '+'}${formatEuro(Math.abs(capex))}`;
+      document.getElementById('prev-mktrd').innerText = `-${formatEuro(mktRdTotal)}`;
+      document.getElementById('prev-log').innerText = `-${formatEuro(exportFixed)}`;
+      document.getElementById('prev-total-out').innerText = `-${formatEuro(totalOut)}`;
+      document.getElementById('prev-max-rev').innerText = `+${formatEuro(maxPotentialRev)}`;
+
+      const warnBox = document.getElementById('turn-warning');
+      if (comp.cash - totalOut < 0) {
+        warnBox.classList.remove('hidden');
+      } else {
+        warnBox.classList.add('hidden');
+      }
+    }
+
+    function renderExportSliders(comp) {
+      const box = document.getElementById('export-pricing-box');
+      const list = document.getElementById('export-sliders-list');
+      const foreignIds = comp.unlockedMarkets.filter(id => id !== game.homeCountry.id);
+
+      if (foreignIds.length === 0) {
+        box.classList.add('hidden');
+        return;
+      }
+      box.classList.remove('hidden');
+      list.innerHTML = foreignIds.map(cid => {
+        const cnt = COUNTRIES.find(c => c.id === cid);
+        const val = comp.decisions.exportPrices[cid] || game.product.refPrice;
+        return `
+          <div>
+            <div class="flex justify-between text-xs font-semibold">
+              <span>${cnt.flag} ${cnt.name} (Douane/Transp: ${cnt.transportCost}€/u)</span>
+              <span id="lbl-exp-price-${cid}" class="text-blue-600 font-bold">${val} €</span>
+            </div>
+            <input type="range" min="${game.product.minPrice}" max="${game.product.maxPrice}" step="10" value="${val}"
+              oninput="updateExportPrice('${cid}', this.value)" class="w-full" />
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateExportPrice(cid, val) {
+      const comp = game.companies[game.activePlayerIdx];
+      comp.decisions.exportPrices[cid] = parseInt(val, 10);
+      document.getElementById(`lbl-exp-price-${cid}`).innerText = `${val} €`;
+    }
+
+    // ==================== VALIDATION DU TOUR & RÉSOLUTION DU MARCHÉ ====================
+    function submitPlayerDecisions() {
+      // Chercher s'il y a un autre joueur humain après celui-ci
+      let nextHumanIdx = -1;
+      for (let i = game.activePlayerIdx + 1; i < game.companies.length; i++) {
+        if (game.companies[i].isHuman) {
+          nextHumanIdx = i;
+          break;
+        }
+      }
+
+      if (nextHumanIdx !== -1) {
+        game.activePlayerIdx = nextHumanIdx;
+        document.getElementById('screen-game').classList.add('hidden');
+        document.getElementById('pass-company-name').innerText = game.companies[nextHumanIdx].name;
+        document.getElementById('screen-pass').classList.remove('hidden');
+      } else {
+        // Tous les humains ont joué : les IA prennent leurs décisions et on résout le tour
+        computeAIDecisions();
+        resolveMarketTurn();
+      }
+    }
+
+    function computeAIDecisions() {
+      const p = game.product;
+      const home = game.homeCountry;
+
+      game.companies.forEach(comp => {
+        if (comp.isHuman) return;
+
+        // Croissance des machines si l'IA a beaucoup de trésorerie
+        if (comp.cash > 260000 && comp.stock < 40 && comp.machines < 6) {
+          comp.decisions.machineDelta = 1;
+        } else {
+          comp.decisions.machineDelta = 0;
+        }
+
+        const effMachines = comp.machines + comp.decisions.machineDelta;
+        comp.decisions.workers = effMachines * 2;
+        comp.decisions.wage = Math.round(home.baseWage * 1.05);
+        const maxProd = effMachines * 100;
+        comp.decisions.prod = Math.max(40, maxProd - Math.min(comp.stock, 50));
+
+        if (comp.aiStrategy === 'lowcost') {
+          comp.decisions.price = Math.round(p.refPrice * 0.88);
+          comp.decisions.mkt = 12500;
+          comp.decisions.rd = 7500;
+        } else if (comp.aiStrategy === 'premium') {
+          const qualPremium = (comp.quality - 100) * 3;
+          comp.decisions.price = Math.min(p.maxPrice, Math.round(p.refPrice * 1.12 + qualPremium));
+          comp.decisions.mkt = 20000;
+          comp.decisions.rd = 22500;
+        } else {
+          const qualBonus = (comp.quality - 100) * 2;
+          comp.decisions.price = Math.round(p.refPrice + qualBonus);
+          comp.decisions.mkt = 17500;
+          comp.decisions.rd = 15000;
+        }
+
+        // Expansion internationale de l'IA si riche
+        if (comp.cash > 300000 && comp.unlockedMarkets.length < 3) {
+          const nextCountry = COUNTRIES.find(c => !comp.unlockedMarkets.includes(c.id));
+          if (nextCountry) {
+            comp.cash -= nextCountry.entryCost;
+            comp.unlockedMarkets.push(nextCountry.id);
+            comp.decisions.exportPrices[nextCountry.id] = comp.decisions.price + nextCountry.transportCost;
+          }
+        }
+      });
+    }
+
+    function resolveMarketTurn() {
+      const p = game.product;
+      const unitMatCost = Math.round(p.matCost * game.macroEvent.matCostMod);
+
+      // 1. Appliquer investissements machines, production, R&D et Marketing
+      const availableUnits = {};
+      game.companies.forEach(comp => {
+        const d = comp.decisions;
+        if (d.machineDelta > 0) {
+          comp.cash -= d.machineDelta * p.machineCost;
+        } else if (d.machineDelta < 0) {
+          comp.cash += Math.abs(d.machineDelta) * Math.round(p.machineCost * 0.5);
+        }
+        comp.machines = Math.max(1, comp.machines + d.machineDelta);
+        comp.workers = d.workers;
+        comp.wage = d.wage;
+
+        // Mise à jour Qualité (R&D cumulée avec rendements décroissants) & Notoriété
+        comp.cumulativeRD += d.rd;
+        comp.quality = 100 + Math.round(Math.sqrt(comp.cumulativeRD / 180));
+        comp.brand = Math.min(100, Math.round(comp.brand * 0.75 + Math.sqrt(d.mkt / 120) * 2.2));
+
+        availableUnits[comp.id] = comp.stock + d.prod;
+        comp.tempSoldHome = 0;
+        comp.tempSoldExport = 0;
+        comp.tempExportRevenue = 0;
+        comp.tempExportTransport = 0;
+        comp.tempHomeShare = 0;
+      });
+
+      // 2. Résolution des ventes Pays par Pays (Local + Export)
+      COUNTRIES.forEach(country => {
+        const activeFirms = game.companies.filter(c => c.unlockedMarkets.includes(country.id));
+        if (activeFirms.length === 0) return;
+
+        // Taille du marché national
+        const baseMarketDemand = Math.round(210 * activeFirms.length * country.demandFactor * game.macroEvent.demandMod);
+
+        // Calcul du score d'attractivité de chaque entreprise présente
+        const scores = {};
+        let totalScore = 0;
+
+        activeFirms.forEach(comp => {
+          const sellPrice = (country.id === game.homeCountry.id)
+            ? comp.decisions.price
+            : (comp.decisions.exportPrices[country.id] || comp.decisions.price);
+
+          const priceRatio = p.refPrice / Math.max(100, sellPrice);
+          const priceScore = Math.pow(priceRatio, 2.3 * country.priceSensitivity);
+          const qualityScore = Math.pow(comp.quality / 100, 1.6 * country.qualitySensitivity);
+          const mktScore = 0.7 + (comp.brand / 100) * 0.7 + Math.log10(comp.decisions.mkt + 1000) * 0.15;
+
+          const s = Math.max(0.01, priceScore * qualityScore * mktScore);
+          scores[comp.id] = s;
+          totalScore += s;
+        });
+
+        // Ajustement global si tous les prix du marché sont trop élevés
+        const avgPrice = activeFirms.reduce((acc, c) => {
+          const sp = (country.id === game.homeCountry.id) ? c.decisions.price : (c.decisions.exportPrices[country.id] || c.decisions.price);
+          return acc + sp;
+        }, 0) / activeFirms.length;
+
+        const elasticityMod = Math.min(1.25, Math.max(0.45, Math.pow(p.refPrice / avgPrice, 0.9)));
+        const effectiveMarketDemand = Math.round(baseMarketDemand * elasticityMod);
+
+        // Répartition de la demande et gestion des ruptures de stock
+        activeFirms.forEach(comp => {
+          const share = totalScore > 0 ? (scores[comp.id] / totalScore) : (1 / activeFirms.length);
+          if (country.id === game.homeCountry.id) {
+            comp.tempHomeShare = share * 100;
+          }
+          const firmDemand = Math.round(effectiveMarketDemand * share);
+          const actualSold = Math.min(availableUnits[comp.id], firmDemand);
+          availableUnits[comp.id] -= actualSold;
+
+          if (country.id === game.homeCountry.id) {
+            comp.tempSoldHome += actualSold;
+          } else {
+            const expPrice = comp.decisions.exportPrices[country.id] || comp.decisions.price;
+            comp.tempSoldExport += actualSold;
+            comp.tempExportRevenue += actualSold * expPrice;
+            comp.tempExportTransport += actualSold * country.transportCost;
+          }
+        });
+      });
+
+      // 3. Clôture comptable (Compte de Résultat et Trésorerie)
+      game.companies.forEach(comp => {
+        const d = comp.decisions;
+        const homeRev = comp.tempSoldHome * d.price;
+        const totalRev = homeRev + comp.tempExportRevenue;
+
+        const matCostTotal = d.prod * unitMatCost;
+        const wagesTotal = (comp.workers * comp.wage) + getManagerCost(comp);
+        const newStock = availableUnits[comp.id];
+        const storageCost = newStock * p.storageCost;
+        const exportFixed = (comp.unlockedMarkets.length - 1) * 8000;
+        const storageAndExport = storageCost + comp.tempExportTransport + exportFixed;
+        const depreciation = comp.machines * Math.round(p.machineCost * 0.08);
+
+        // Intérêts d'emprunt (3%) + Agios découvert (8% si trésorerie négative)
+        const loanInterest = Math.round(comp.loan * 0.03);
+        const overdraftInterest = comp.cash < 0 ? Math.round(Math.abs(comp.cash) * 0.08) : 0;
+        const totalInterest = loanInterest + overdraftInterest;
+
+        const cashFlowTurn = totalRev - matCostTotal - wagesTotal - d.mkt - d.rd - storageAndExport - totalInterest;
+        const netIncome = cashFlowTurn - depreciation;
+
+        comp.cash += cashFlowTurn;
+        comp.stock = newStock;
+        comp.decisions.machineDelta = 0;
+
+        comp.lastReport = {
+          revenue: totalRev,
+          matCostTotal,
+          wagesTotal,
+          mktTotal: d.mkt,
+          rdTotal: d.rd,
+          storageAndExport,
+          depreciation,
+          interest: totalInterest,
+          netIncome,
+          unitsSoldHome: comp.tempSoldHome,
+          unitsSoldExport: comp.tempSoldExport,
+          marketShareHome: comp.tempHomeShare
+        };
+      });
+
+      // Log du tour
+      const leader = [...game.companies].sort((a, b) => b.lastReport.revenue - a.lastReport.revenue)[0];
+      game.logs.unshift(
+        `<strong>Fin du Tour ${game.turn}</strong> : <strong>${leader.name}</strong> prend la tête des ventes avec un CA de <strong>${formatEuro(leader.lastReport.revenue)}</strong> (${leader.lastReport.unitsSoldHome + leader.lastReport.unitsSoldExport} unités vendues).`
+      );
+
+      // 4. Vérifier fin de partie ou passer au tour suivant
+      if (game.turn >= game.maxTurns) {
+        showGameOver();
+        return;
+      }
+
+      game.turn++;
+      generateRandomMacroEvent();
+      game.activePlayerIdx = 0;
+
+      if (setupState.mode === 'multi') {
+        document.getElementById('screen-game').classList.add('hidden');
+        document.getElementById('pass-company-name').innerText = game.companies[0].name;
+        document.getElementById('screen-pass').classList.remove('hidden');
+      } else {
+        loadActivePlayerTurn();
+      }
+    }
+
+    function generateRandomMacroEvent() {
+      const events = [
+        { title: 'Marché porteur : forte confiance des ménages (+15% de demande globale).', demandMod: 1.15, matCostMod: 1.0 },
+        { title: 'Tension sur les composants : le coût des matières premières augmente de 15%.', demandMod: 1.0, matCostMod: 1.15 },
+        { title: 'Ralentissement conjoncturel : la demande globale baisse de 12% ce trimestre.', demandMod: 0.88, matCostMod: 1.0 },
+        { title: 'Accords commerciaux favorables : baisse de 10% du coût des matières premières.', demandMod: 1.05, matCostMod: 0.90 },
+        { title: 'Stabilité macroéconomique sur l’ensemble des marchés.', demandMod: 1.0, matCostMod: 1.0 }
+      ];
+      game.macroEvent = events[Math.floor(Math.random() * events.length)];
+    }
+
+    // ==================== RENDU DES ONGLETS SECONDAIRES ====================
+    function renderMarketTab() {
+      const tbody = document.getElementById('market-table-body');
+      tbody.innerHTML = game.companies.map(c => {
+        const r = c.lastReport;
+        const isCurrent = c.id === game.activePlayerIdx;
+        return `
+          <tr class="${isCurrent ? 'bg-blue-50/70 font-bold' : ''}">
+            <td class="py-3 px-3 text-slate-900">
+              ${c.name} ${c.isHuman ? '<span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded ml-1">Joueur</span>' : '<span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded ml-1">IA</span>'}
+            </td>
+            <td class="py-3 px-3">${formatEuro(c.decisions.price)}</td>
+            <td class="py-3 px-3 text-emerald-700">Niv. ${c.quality}</td>
+            <td class="py-3 px-3">${c.brand}/100</td>
+            <td class="py-3 px-3">${r.unitsSoldHome + r.unitsSoldExport} u.</td>
+            <td class="py-3 px-3 text-indigo-600 font-bold">${r.marketShareHome.toFixed(1)} %</td>
+            <td class="py-3 px-3 font-bold">${formatEuro(r.revenue)}</td>
+            <td class="py-3 px-3 ${r.netIncome >= 0 ? 'text-emerald-600' : 'text-rose-600'} font-bold">${r.netIncome >= 0 ? '+' : ''}${formatEuro(r.netIncome)}</td>
+            <td class="py-3 px-3 ${c.cash >= 0 ? 'text-slate-900' : 'text-rose-600'} font-bold">${formatEuro(c.cash)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('market-logs').innerHTML = game.logs.map(l => `
+        <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">${l}</div>
+      `).join('');
+    }
+
+    function renderFinanceTab(comp) {
+      const r = comp.lastReport;
+      const box = document.getElementById('income-statement-box');
+      box.innerHTML = `
+        <div class="flex justify-between py-2 border-b border-slate-100 font-bold text-slate-900">
+          <span>+ Chiffre d'Affaires (Ventes Locales + Export)</span>
+          <span class="text-emerald-600">+${formatEuro(r.revenue)}</span>
+        </div>
+        <div class="flex justify-between py-1.5 text-slate-600">
+          <span>- Achats de matières premières</span>
+          <span>-${formatEuro(r.matCostTotal)}</span>
+        </div>
+        <div class="flex justify-between py-1.5 text-slate-600">
+          <span>- Salaires et charges sociales (Ouvriers & Directeurs)</span>
+          <span>-${formatEuro(r.wagesTotal)}</span>
+        </div>
+        <div class="flex justify-between py-1.5 text-slate-600">
+          <span>- Budget Marketing & Communication</span>
+          <span>-${formatEuro(r.mktTotal)}</span>
+        </div>
+        <div class="flex justify-between py-1.5 text-slate-600">
+          <span>- Investissement Recherche & Développement</span>
+          <span>-${formatEuro(r.rdTotal)}</span>
+        </div>
+        <div class="flex justify-between py-1.5 text-slate-600">
+          <span>- Frais de stockage & Logistique Export</span>
+          <span>-${formatEuro(r.storageAndExport)}</span>
+        </div>
+        <div class="flex justify-between py-1.5 text-slate-600">
+          <span>- Dotations aux amortissements (Machines)</span>
+          <span>-${formatEuro(r.depreciation)}</span>
+        </div>
+        <div class="flex justify-between py-1.5 text-slate-600">
+          <span>- Frais financiers (Intérêts d'emprunt & agios)</span>
+          <span>-${formatEuro(r.interest)}</span>
+        </div>
+        <div class="flex justify-between py-3 border-t-2 border-slate-200 font-extrabold text-base ${r.netIncome >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
+          <span>= Résultat Net Comptable</span>
+          <span>${r.netIncome >= 0 ? '+' : ''}${formatEuro(r.netIncome)}</span>
+        </div>
+      `;
+
+      const maxLoan = comp.machines * 100000;
+      const remBorrow = Math.max(0, maxLoan - comp.loan);
+      document.getElementById('fin-debt').innerText = formatEuro(comp.loan);
+      document.getElementById('fin-borrow-cap').innerText = formatEuro(remBorrow);
+      document.getElementById('fin-interest').innerText = `${formatEuro(Math.round(comp.loan * 0.03))} / tour`;
+    }
+
+    function takeLoan(amount) {
+      const comp = game.companies[game.activePlayerIdx];
+      const maxLoan = comp.machines * 100000;
+      if (comp.loan + amount > maxLoan) {
+        alert("Plafond d'emprunt atteint ! Achète davantage de machines pour augmenter tes garanties bancaires.");
+        return;
+      }
+      comp.loan += amount;
+      comp.cash += amount;
+      refreshAllDashboardUI();
+    }
+
+    function repayLoan(amount) {
+      const comp = game.companies[game.activePlayerIdx];
+      const repay = Math.min(comp.loan, amount);
+      if (repay <= 0) return;
+      if (comp.cash < repay) {
+        alert("Trésorerie insuffisante pour rembourser cette échéance.");
+        return;
+      }
+      comp.loan -= repay;
+      comp.cash -= repay;
+      refreshAllDashboardUI();
+    }
+
+    function renderWorldTab(comp) {
+      const pill = document.getElementById('world-status-pill');
+      if (comp.unlockedWorldCapability) {
+        pill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800';
+        pill.innerText = '✅ Division Export Débloquée';
+      } else {
+        pill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800';
+        pill.innerText = '🔒 Requiert 3 machines ou 220 000 € de CA';
+      }
+
+      const grid = document.getElementById('world-countries-grid');
+      grid.innerHTML = COUNTRIES.map(c => {
+        const isHome = c.id === game.homeCountry.id;
+        const isOpened = comp.unlockedMarkets.includes(c.id);
+
+        return `
+          <div class="p-4 rounded-xl border-2 ${isOpened ? 'border-blue-600 bg-blue-50/30' : 'border-slate-200 bg-slate-50'} flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-base text-slate-900">${c.flag} ${c.name}</span>
+                ${isHome ? '<span class="text-[11px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full">Siège Local</span>' :
+                  isOpened ? '<span class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full">Filiale Active</span>' :
+                  '<span class="text-[11px] font-bold bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">Fermé</span>'}
+              </div>
+              <div class="mt-3 space-y-1 text-xs text-slate-600">
+                <div>• Taille du marché : <strong>x${c.demandFactor}</strong></div>
+                <div>• Sensibilité Prix : <strong>${c.priceSensitivity > 1.1 ? 'Élevée' : c.priceSensitivity < 0.95 ? 'Faible' : 'Moyenne'}</strong></div>
+                <div>• Exigence Qualité (R&D) : <strong>${c.qualitySensitivity > 1.15 ? 'Très Forte' : 'Standard'}</strong></div>
+                ${!isHome ? `<div>• Coût logistique export : <strong>${c.transportCost} €/u</strong> + 8 000 €/tour</div>` : ''}
+              </div>
+            </div>
+
+            <div class="mt-4">
+              ${isHome ? `<div class="text-xs font-bold text-blue-700">Marché domestique principal</div>` :
+                isOpened ? `<div class="text-xs font-bold text-emerald-700">✓ Réseau de distribution opérationnel</div>` :
+                `<button onclick="openForeignMarket('${c.id}')" ${!comp.unlockedWorldCapability ? 'disabled' : ''} 
+                  class="w-full py-2.5 rounded-lg font-bold text-xs ${comp.unlockedWorldCapability ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+                  Ouvrir filiale (${formatEuro(c.entryCost)})
+                </button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openForeignMarket(countryId) {
+      const comp = game.companies[game.activePlayerIdx];
+      const cnt = COUNTRIES.find(c => c.id === countryId);
+      if (!comp.unlockedWorldCapability) return;
+      if (comp.cash < cnt.entryCost) {
+        alert("Trésorerie insuffisante pour financer l'ouverture de cette filiale étrangère.");
+        return;
+      }
+      comp.cash -= cnt.entryCost;
+      comp.unlockedMarkets.push(countryId);
+      comp.decisions.exportPrices[countryId] = comp.decisions.price + cnt.transportCost;
+      refreshAllDashboardUI();
+    }
+
+    function renderDelegationTab(comp) {
+      const pill = document.getElementById('delegation-status-pill');
+      if (comp.unlockedDelegationCapability) {
+        pill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800';
+        pill.innerText = '✅ Recrutement des Directeurs Débloqué';
+      } else {
+        pill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800';
+        pill.innerText = '🔒 Requiert 250 000 € de Trésorerie ou 200 000 € de CA';
+      }
+
+      const grid = document.getElementById('managers-grid');
+      grid.innerHTML = MANAGERS.map(m => {
+        const active = comp.managers[m.id];
+        return `
+          <div class="p-4 rounded-xl border-2 ${active ? 'border-emerald-600 bg-emerald-50/30' : 'border-slate-200 bg-slate-50'} flex flex-col justify-between">
+            <div>
+              <div class="text-2xl mb-1">${m.icon}</div>
+              <div class="font-extrabold text-slate-900 text-sm">${m.title}</div>
+              <div class="text-xs font-bold text-blue-600 mt-0.5">Salaire : ${formatEuro(m.salary)} / tour</div>
+              <p class="text-xs text-slate-500 mt-2 leading-relaxed">${m.desc}</p>
+            </div>
+            <button onclick="toggleManager('${m.id}')" ${!comp.unlockedDelegationCapability ? 'disabled' : ''}
+              class="mt-4 w-full py-2.5 rounded-lg font-bold text-xs ${!comp.unlockedDelegationCapability ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : active ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}">
+              ${active ? 'Désactiver la délégation' : 'Déléguer ce pôle'}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleManager(managerId) {
+      const comp = game.companies[game.activePlayerIdx];
+      if (!comp.unlockedDelegationCapability) return;
+      comp.managers[managerId] = !comp.managers[managerId];
+      applyAutomatedManagers(comp);
+      loadActivePlayerTurn();
+    }
+
+    function getManagerCost(comp) {
+      let cost = 0;
+      MANAGERS.forEach(m => {
+        if (comp.managers[m.id]) cost += m.salary;
+      });
+      return cost;
+    }
+
+    // ==================== NAVIGATION ONGLETS ====================
+    function switchTab(tabName) {
+      ['decisions', 'market', 'finance', 'world', 'delegation'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (t === tabName) {
+          el.classList.remove('hidden');
+          btn.className = 'tab-active px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition flex items-center gap-1.5';
+        } else {
+          el.classList.add('hidden');
+          btn.className = 'bg-white text-slate-600 border border-slate-200 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition flex items-center gap-1.5';
+        }
+      });
+    }
+
+    // ==================== FIN DE PARTIE ====================
+    function showGameOver() {
+      document.getElementById('screen-game').classList.add('hidden');
+      document.getElementById('screen-gameover').classList.remove('hidden');
+
+      const ranked = game.companies.map(c => {
+        const netWorth = c.cash + (c.machines * Math.round(game.product.machineCost * 0.7)) + (c.stock * game.product.matCost) - c.loan;
+        return { ...c, netWorth };
+      }).sort((a, b) => b.netWorth - a.netWorth);
+
+      const podium = document.getElementById('gameover-podium');
+      podium.innerHTML = ranked.map((c, idx) => `
+        <div class="p-4 rounded-xl border ${idx === 0 ? 'border-amber-400 bg-amber-50/60' : 'border-slate-200 bg-slate-50'} flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg ${idx === 0 ? 'bg-amber-400 text-slate-950' : 'bg-slate-200 text-slate-700'} font-extrabold flex items-center justify-center">
+              #${idx + 1}
+            </div>
+            <div>
+              <div class="font-extrabold text-slate-900">${c.name}</div>
+              <div class="text-xs text-slate-500">${c.machines} machines • ${c.unlockedMarkets.length} pays • Qualité Niv. ${c.quality}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-slate-500">Valorisation Nette</div>
+            <div class="text-lg font-extrabold ${c.netWorth >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${formatEuro(c.netWorth)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function formatEuro(val) {
+      return `${Math.round(val).toLocaleString('fr-FR')} €`;
+    }
+
+    // Démarrage initial
+    initSetupUI();
+  </script>
+</body>
+</html>
